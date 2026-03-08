@@ -6,6 +6,7 @@ namespace lilToon
 {
     public class VRChatCameraModeInspector : lilToonInspector
     {
+        private MaterialProperty vrFilterCombineMode;
         private MaterialProperty vrCameraFilterBehavior;
         private MaterialProperty vrCameraModeEnable;
         private MaterialProperty vrCameraModeTarget;
@@ -13,8 +14,11 @@ namespace lilToon
         private MaterialProperty vrCameraMaskEnable;
         private MaterialProperty vrCameraMaskCompareMode;
         private MaterialProperty vrCameraMask;
+        private MaterialProperty vrMirrorFilterBehavior;
+        private MaterialProperty vrMirrorModeEnable;
+        private MaterialProperty vrMirrorModeMask;
 
-        private static bool isShowVRCameraMode;
+        private static bool isShowVRVisibilityFilters;
         private const string shaderName = "VRChatCameraMode";
 
         protected override void LoadCustomProperties(MaterialProperty[] props, Material material)
@@ -24,6 +28,7 @@ namespace lilToon
             ReplaceToCustomShaders();
             isShowRenderMode = !material.shader.name.Contains("Optional");
 
+            vrFilterCombineMode = FindProperty("_VRFilterCombineMode", props);
             vrCameraFilterBehavior = FindProperty("_VRCameraFilterBehavior", props);
             vrCameraModeEnable = FindProperty("_VRCameraModeEnable", props);
             vrCameraModeTarget = FindProperty("_VRCameraModeTarget", props);
@@ -31,12 +36,33 @@ namespace lilToon
             vrCameraMaskEnable = FindProperty("_VRCameraMaskEnable", props);
             vrCameraMaskCompareMode = FindProperty("_VRCameraMaskCompareMode", props);
             vrCameraMask = FindProperty("_VRCameraMask", props);
+            vrMirrorFilterBehavior = FindProperty("_VRMirrorFilterBehavior", props);
+            vrMirrorModeEnable = FindProperty("_VRMirrorModeEnable", props);
+            vrMirrorModeMask = FindProperty("_VRMirrorModeMask", props);
         }
 
         protected override void DrawCustomProperties(Material material)
         {
-            isShowVRCameraMode = Foldout("VRChat Camera Mode", "VRChat Camera Mode", isShowVRCameraMode);
-            if(!isShowVRCameraMode) return;
+            isShowVRVisibilityFilters = Foldout("VRChat Visibility Filters", "VRChat Visibility Filters", isShowVRVisibilityFilters);
+            if(!isShowVRVisibilityFilters) return;
+
+            EditorGUILayout.BeginVertical(boxOuter);
+            EditorGUILayout.LabelField("VRChat Filter Combine", customToggleFont);
+            EditorGUILayout.BeginVertical(boxInnerHalf);
+
+            m_MaterialEditor.ShaderProperty(vrFilterCombineMode, "Filter Combine Mode");
+
+            EditorGUILayout.HelpBox(
+                "Any Enabled Filter = OR. All Enabled Filters = AND.\n" +
+                "Show On Match filters use this as an inclusion rule.\n" +
+                "Hide On Match filters use this as an exclusion rule, and hiding takes priority.",
+                MessageType.Info
+            );
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.Space();
 
             EditorGUILayout.BeginVertical(boxOuter);
             EditorGUILayout.LabelField("VRChat Camera Mode", customToggleFont);
@@ -71,7 +97,33 @@ namespace lilToon
                 "_VRChatCameraMode values: 0 Normal, 1 VR Handheld, 2 Desktop Handheld, 3 Screenshot.\n" +
                 "You can target multiple camera modes at once.\n" +
                 "_VRChatCameraMask is the active camera cullingMask and is only valid when CameraMode is not 0.\n" +
+                "Set Filter Combine Mode to Any Enabled Filter to hide on camera or mirror, and All Enabled Filters to require both.\n" +
                 "Set Filter Action to Hide On Match to hide the material only on the selected camera.",
+                MessageType.Info
+            );
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.BeginVertical(boxOuter);
+            EditorGUILayout.LabelField("VRChat Mirror Mode", customToggleFont);
+            EditorGUILayout.BeginVertical(boxInnerHalf);
+
+            m_MaterialEditor.ShaderProperty(vrMirrorFilterBehavior, "Mirror Filter Action");
+
+            EditorGUILayout.Space();
+
+            m_MaterialEditor.ShaderProperty(vrMirrorModeEnable, "Use Mirror Mode Filter");
+            using(new EditorGUI.DisabledScope(vrMirrorModeEnable.floatValue < 0.5f))
+            {
+                DrawMirrorModeMaskField();
+            }
+
+            EditorGUILayout.HelpBox(
+                "_VRChatMirrorMode values: 0 Normal, 1 VR Mirror, 2 Desktop Mirror.\n" +
+                "Set Mirror Filter Action to Hide On Match to hide the material in mirrors.",
                 MessageType.Info
             );
 
@@ -175,6 +227,24 @@ namespace lilToon
             }
 
             return mask & ~bit;
+        }
+
+        private void DrawMirrorModeMaskField()
+        {
+            int currentMask = Mathf.RoundToInt(vrMirrorModeMask.floatValue);
+            int nextMask = currentMask;
+
+            EditorGUILayout.LabelField("Target Mirror Modes");
+            EditorGUI.indentLevel++;
+            nextMask = DrawModeToggle("Normal", nextMask, 1 << 0);
+            nextMask = DrawModeToggle("VR Mirror", nextMask, 1 << 1);
+            nextMask = DrawModeToggle("Desktop Mirror", nextMask, 1 << 2);
+            EditorGUI.indentLevel--;
+
+            if(nextMask != currentMask)
+            {
+                vrMirrorModeMask.floatValue = nextMask;
+            }
         }
     }
 }

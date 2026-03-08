@@ -1,6 +1,8 @@
 
         //----------------------------------------------------------------------------------------------------------------------
         // VRChat Camera Mode
+        [Enum(Any Enabled Filter,0,All Enabled Filters,1)]
+                    _VRFilterCombineMode ("Filter Combine Mode", Int) = 0
         [Enum(Show On Match,0,Hide On Match,1)]
                     _VRCameraFilterBehavior ("Filter Action", Int) = 0
         [ToggleUI] _VRCameraModeEnable ("Use Camera Mode Filter", Int) = 0
@@ -12,3 +14,11 @@
         [Enum(Any Bit,0,Exact Match,1)]
                     _VRCameraMaskCompareMode ("Camera Mask Match", Int) = 0
                     _VRCameraMask ("Target Camera Mask", Int) = 0
+
+        //----------------------------------------------------------------------------------------------------------------------
+        // VRChat Mirror Mode
+        [Enum(Show On Match,0,Hide On Match,1)]
+                    _VRMirrorFilterBehavior ("Mirror Filter Action", Int) = 0
+        [ToggleUI] _VRMirrorModeEnable ("Use Mirror Mode Filter", Int) = 0
+        [HideInInspector]
+                    _VRMirrorModeMask ("Target Mirror Mode Mask", Int) = 6
