@@ -129,6 +129,16 @@ namespace lilToon
 
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndVertical();
+
+            if(HasImpossibleAllFiltersCombination())
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.HelpBox(
+                    "Camera Mode / Camera Mask filters may not match during mirror rendering.\n" +
+                    "With All Enabled Filters, if Mirror Mode Filter uses the same Filter Action and Target Mirror Modes does not include Normal, this combination cannot match in typical VRChat rendering.",
+                    MessageType.Warning
+                );
+            }
         }
 
         protected override void ReplaceToCustomShaders()
@@ -245,6 +255,47 @@ namespace lilToon
             {
                 vrMirrorModeMask.floatValue = nextMask;
             }
+        }
+
+        private bool HasImpossibleAllFiltersCombination()
+        {
+            if(Mathf.RoundToInt(vrFilterCombineMode.floatValue) != 1)
+            {
+                return false;
+            }
+
+            if(vrMirrorModeEnable.floatValue < 0.5f)
+            {
+                return false;
+            }
+
+            int cameraBehavior = Mathf.RoundToInt(vrCameraFilterBehavior.floatValue);
+            int mirrorBehavior = Mathf.RoundToInt(vrMirrorFilterBehavior.floatValue);
+            if(cameraBehavior != mirrorBehavior)
+            {
+                return false;
+            }
+
+            int mirrorMask = Mathf.RoundToInt(vrMirrorModeMask.floatValue);
+            return (mirrorMask & (1 << 0)) == 0 && HasCameraFilterThatCannotMatchMirrorRendering();
+        }
+
+        private bool HasCameraFilterThatCannotMatchMirrorRendering()
+        {
+            if(vrCameraMaskEnable.floatValue >= 0.5f)
+            {
+                return true;
+            }
+
+            if(vrCameraModeEnable.floatValue < 0.5f)
+            {
+                return false;
+            }
+
+            int rawMask = Mathf.RoundToInt(vrCameraModeMask.floatValue);
+            int legacyMode = Mathf.RoundToInt(vrCameraModeTarget.floatValue);
+            int effectiveMask = rawMask < 0 ? 1 << Mathf.Clamp(legacyMode, 0, 3) : rawMask;
+            return (effectiveMask & (1 << 0)) == 0;
         }
     }
 }
