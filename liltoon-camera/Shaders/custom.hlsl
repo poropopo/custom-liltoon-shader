@@ -109,6 +109,9 @@ float _VRChatMirrorMode;
 #define LIL_VRFILTER_VISIBLE \
     (LIL_VR_SHOW_ALLOWED && !LIL_VR_HIDE_BLOCKED)
 
-// Clip every pass up front so the object also disappears from shadows and depth buffers.
+// Keep the visibility filter on runtime color/shadow/depth passes only.
+// Editor-only passes such as Meta, MotionVectors, selection and picking should stay untouched.
+#if defined(LIL_PASS_FORWARD) || defined(LIL_PASS_FORWARDADD) || defined(LIL_PASS_SHADOWCASTER) || defined(LIL_PASS_DEPTHONLY) || defined(LIL_PASS_DEPTHNORMALS)
 #define BEFORE_UNPACK_V2F \
     clip(LIL_VRFILTER_VISIBLE ? 1.0 : -1.0);
+#endif
